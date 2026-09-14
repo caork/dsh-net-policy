@@ -1,5 +1,7 @@
 # dsh-net-policy
 
+[![tests](https://github.com/caork/dsh-net-policy/actions/workflows/ci.yml/badge.svg)](https://github.com/caork/dsh-net-policy/actions/workflows/ci.yml)
+
 A DSH (DeepSeek Harness) plugin that gives one Harness process an outbound
 transport policy: extra trusted CA certificates, per-host certificate
 verification, and per-host HTTP proxies — none of which the shipped model
@@ -12,21 +14,18 @@ without touching a single provider entry.
 
 ## Installation
 
-```bash
-dsh plugin --profile desktop add dsh-net-policy
-```
-
-From a local tarball (same command, a path instead of a name):
+Download the tarball from [Releases](https://github.com/caork/dsh-net-policy/releases),
+then install it into the profile you want it in:
 
 ```bash
-dsh plugin --profile desktop add /path/to/dsh-net-policy-0.2.0.tgz
+dsh plugin --profile desktop add /path/to/dsh-net-policy-<version>.tgz
 ```
 
 On DSH Desktop the bundled CLI is the one to use, because it carries the pnpm
 version that matches the profile's store:
 
 ```bash
-"$HOME/Library/Application Support/DSH Desktop/cli/"*/bin/dsh plugin --profile desktop add /path/to/dsh-net-policy-0.2.0.tgz
+"$HOME/Library/Application Support/DSH Desktop/cli/"*/bin/dsh plugin --profile desktop add /path/to/dsh-net-policy-<version>.tgz
 ```
 
 `dsh plugin add` reconciles `dsh.profile.bundles` itself, so the plugin becomes
