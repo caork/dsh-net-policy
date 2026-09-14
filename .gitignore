@@ -1,0 +1,4 @@
+node_modules/
+*.tgz
+# Built by tsdown from src/client; the hand-written host half lives in lib/ too.
+lib/client.js

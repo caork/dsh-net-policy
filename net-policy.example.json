@@ -1,0 +1,10 @@
+{
+  "proxy": "http://127.0.0.1:7890",
+  "noProxy": ["192.168.31.179", "hawkingrad.cloud"],
+  "caFiles": ["~/certs/my-root-ca.pem"],
+  "insecure": false,
+  "rules": [
+    { "host": "llm.hawkingrad.cloud", "caFiles": ["~/certs/llm-ca.pem"], "proxy": null },
+    { "host": "*.internal.example", "insecure": true, "proxy": null }
+  ]
+}

@@ -1,0 +1,11 @@
+# The dsh-net-policy bundle patch: one insert over the profile root. The user's
+# profile cordis.patch.yml may address the row by id to override its config:
+#
+#   - id: net-policy
+#     config:
+#       proxy: http://127.0.0.1:7890
+#
+- insert:
+    - id: net-policy
+      name: 'dsh-net-policy'
+      config: {}

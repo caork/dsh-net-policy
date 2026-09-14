@@ -1,0 +1,29 @@
+name: tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        # Windows is in the matrix on purpose: the plugin resolves certificate
+        # paths, replaces the settings file, and polls it for edits, and each
+        # of those behaves differently there.
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['22.19', '24']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - run: npm install
+      - run: npm run build:client
+      - run: npx tsc -p tsconfig.json --noEmit
+      - run: npm test

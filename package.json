@@ -1,0 +1,85 @@
+{
+  "name": "dsh-net-policy",
+  "version": "0.2.1",
+  "description": "DSH plugin: per-host TLS trust, certificate-verification and HTTP proxy policy for outbound model traffic",
+  "type": "module",
+  "license": "MIT",
+  "main": "lib/index.js",
+  "exports": {
+    ".": {
+      "default": "./lib/index.js"
+    },
+    "./policy": {
+      "default": "./lib/policy.js"
+    },
+    "./package.json": "./package.json",
+    "./client": {
+      "default": "./lib/client.js"
+    },
+    "./form": {
+      "default": "./lib/form.js"
+    },
+    "./wire": {
+      "default": "./lib/wire.js"
+    }
+  },
+  "files": [
+    "lib",
+    "cordis.patch.yml",
+    "README.md",
+    "net-policy.example.json"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-runtime",
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings"
+      ]
+    }
+  },
+  "keywords": [
+    "deepseek-harness",
+    "dsh-plugin",
+    "proxy",
+    "tls"
+  ],
+  "dependencies": {
+    "undici": "^7.16.0"
+  },
+  "engines": {
+    "node": ">=22.19.0"
+  },
+  "scripts": {
+    "build:client": "tsdown",
+    "test": "node --test tests/policy.test.mjs tests/form.test.mjs tests/transport.test.mjs",
+    "prepack": "npm run build:client"
+  },
+  "devDependencies": {
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "tsdown": "^0.14.0",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/cordis": "^4.0.1"
+  },
+  "peerDependenciesMeta": {
+    "@deepseek-ai/cordis": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caork/dsh-net-policy.git"
+  },
+  "homepage": "https://github.com/caork/dsh-net-policy#readme",
+  "bugs": {
+    "url": "https://github.com/caork/dsh-net-policy/issues"
+  },
+  "author": "caork"
+}
