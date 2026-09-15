@@ -158,6 +158,51 @@ Enterprise CAs already installed in the Windows certificate store may be
 trusted by the Harness runtime without this plugin, since DSH Desktop runs Node
 with `--use-system-ca`. Use `caFiles` when they are not.
 
+## How it works
+
+One mount does four things, in this order:
+
+1. **Read and validate.** The settings file if it exists, the plugin's own
+   config otherwise, through `normalizeConfig` — which rejects a SOCKS URL, a
+   malformed host list, or a non-boolean switch by name, before any of it
+   becomes the policy.
+2. **Build one dispatcher.** An undici `Agent` whose `factory(origin, options)`
+   decides per origin: the origin matches a proxy route, so it gets a
+   `ProxyAgent`; otherwise it gets a `Pool` carrying the connect options the
+   policy asks for (`ca` for the extra trust, `rejectUnauthorized: false` for an
+   insecure host). Nothing is decided per request, so two requests to the same
+   origin cannot disagree.
+3. **Install it.** `setGlobalDispatcher(agent)`, then a check that
+   `globalThis[Symbol.for('undici.globalDispatcher.1')]` really is that agent —
+   that slot is what Node's built-in `fetch` reads. If a userland undici ever
+   stops publishing it, the plugin wraps `globalThis.fetch` to pass the
+   dispatcher explicitly and says so in the log, rather than going quiet.
+4. **Extend the trust store.** `tls.setDefaultCACertificates([...the process
+   default, ...your PEMs])`, which reaches callers that build their own
+   connection as well as the dispatcher above.
+
+Then `watchFile` polls the settings file every two seconds; a change rebuilds
+the transport, swaps it in, and closes the old one. Unmounting restores the
+dispatcher, the trust store, and `fetch` exactly as they were found.
+
+This covers model traffic because DSH's LLM adapters call the global `fetch`
+with no dispatcher of their own (`dsh-llm-deepseek`, `dsh-llm-pi-ai`), and
+because the whole Harness — sessions, tools, HTTP MCP — runs in one Host
+process, so one install reaches all of it.
+
+### Proving it is in effect
+
+Set the proxy to an address nothing listens on, `http://127.0.0.1:1`, save, and
+send one message:
+
+- The request fails to connect → the policy is in effect and does reach model
+  traffic, so an earlier "no effect" was about the proxy address itself.
+- The model answers normally → that traffic never saw the policy. Check the log
+  line, then the list below.
+
+Do not test with `curl` from the agent's terminal. That is a subprocess and is
+not covered — see below.
+
 ## Coverage
 
 Covered: every request that goes through this process's global `fetch` —
@@ -166,14 +211,18 @@ model requests, embeddings, web search, HTTP MCP transports — plus, for the
 
 Not covered:
 
-- **The built-in web fetch tool** pins the addresses it validated and builds
-  its own connection, so the proxy part of this policy does not reach it. Extra
-  CAs do, because they join the process-wide trust store.
-- **Subprocesses** — the bash tool, stdio MCP servers, and subagents such as
-  Claude Code or Codex are separate processes with their own environment.
+- **Subprocesses** — the bash and PowerShell tools, stdio MCP servers, and
+  subagents such as Claude Code or Codex are separate processes that read their
+  own environment. `curl` run from the agent's terminal is one of these: it will
+  not follow this policy, and it is not a test of whether the policy works.
 - **The desktop shell itself** — application updates and the plugin market go
   through Electron's own network stack, which follows the operating system's
   proxy settings rather than this policy.
+- **Anything that builds its own dispatcher.** A caller that passes its own
+  `dispatcher` to `fetch`, or uses an HTTP client that does, decides its own
+  route. DSH's own LLM adapters and its web provider do not: they call the
+  global `fetch`, which is why one install covers them. A third-party plugin
+  might.
 
 ## Diagnostics
 
