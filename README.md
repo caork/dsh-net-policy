@@ -15,21 +15,67 @@ without touching a single provider entry.
 ## Installation
 
 Download the tarball from [Releases](https://github.com/caork/dsh-net-policy/releases),
-then install it into the profile you want it in:
+then install it with **`dsh plugin add`** — not with `pnpm add` or `npm install`:
 
 ```bash
 dsh plugin --profile desktop add /path/to/dsh-net-policy-<version>.tgz
 ```
 
-On DSH Desktop the bundled CLI is the one to use, because it carries the pnpm
-version that matches the profile's store:
+Restart the app once afterwards. Settings then has a **Network** section, and
+the Host log carries one `dsh-net-policy: applied ...` line.
+
+### Installing with pnpm directly does not work
+
+`dsh plugin add` forwards the install to pnpm **and** adds the package to
+`dsh.profile.bundles` in the profile's `package.json`. That list is what makes
+the profile load the plugin, and the shell only looks for a client bundle among
+plugins it has loaded. Install with bare pnpm and the package sits in
+`node_modules` doing nothing: no policy, and no Network section.
+
+If that already happened, add the name to the list by hand and restart — the
+dependency pnpm installed is fine:
+
+```json
+"dsh": { "profile": { "bundles": [
+  "@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app", "dsh-net-policy"
+] } }
+```
+
+### Which `dsh` to run
+
+The profile's `node_modules` is linked from the store of whichever pnpm built
+it, so use the `dsh` that belongs to the app rather than one from your shell —
+a mismatched pnpm major fails with `ERR_PNPM_UNEXPECTED_STORE`.
+
+**DSH Desktop on Windows** puts its own `dsh` on the PATH of the processes it
+starts, so the app's built-in terminal is the simplest place to run the command
+(`--profile` defaults to the profile the app booted). The shim itself is at:
+
+```
+%APPDATA%\DSH Desktop\host-commands\<profile>\bin\dsh.cmd
+```
+
+**DSH Desktop on macOS and Linux** keeps its CLI under the application's state
+directory:
 
 ```bash
 "$HOME/Library/Application Support/DSH Desktop/cli/"*/bin/dsh plugin --profile desktop add /path/to/dsh-net-policy-<version>.tgz
 ```
 
-`dsh plugin add` reconciles `dsh.profile.bundles` itself, so the plugin becomes
-a profile layer as soon as it is installed. Restart the app once to load it.
+**The standalone `dsh` CLI** needs no special path — just name the profile you
+boot, and run it against the same `DSH_HOME` the app uses.
+
+### When the Network section does not appear
+
+1. Check `dsh.profile.bundles` in `$DSH_HOME/profiles/<profile>/package.json`
+   (`%USERPROFILE%\.dsh\profiles\<profile>\package.json` on Windows) for
+   `dsh-net-policy`. Missing means the plugin was never loaded.
+2. Search the Host log for `dsh-net-policy`. DSH Desktop writes it under its
+   own application-data directory — `%APPDATA%\DSH Desktop\logs\` on Windows,
+   `~/Library/Application Support/DSH Desktop/logs/` on macOS. An `applied ...`
+   line means the Host half is running and only the browser half is missing.
+3. Confirm you installed into the profile the app actually boots, and that the
+   app has been restarted since.
 
 ## Settings page
 
