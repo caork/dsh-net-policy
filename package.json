@@ -1,6 +1,6 @@
 {
   "name": "dsh-net-policy",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "DSH plugin: per-host TLS trust, certificate-verification and HTTP proxy policy for outbound model traffic",
   "type": "module",
   "license": "MIT",

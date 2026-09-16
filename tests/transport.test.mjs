@@ -15,7 +15,8 @@ import test, { after, before } from 'node:test'
 import { fileURLToPath } from 'node:url'
 
 process.env.DSH_HOME = mkdtempSync(join(tmpdir(), 'dsh-net-policy-'))
-const { apply } = await import('../lib/index.js')
+const { apply, buildTransport, captureBaseline } = await import('../lib/index.js')
+const { normalizeConfig } = await import('../lib/policy.js')
 
 const fixture = (file) => fileURLToPath(new URL(`./fixtures/${file}`, import.meta.url))
 const CERT_PATH = fixture('server-cert.pem')
@@ -182,4 +183,46 @@ test('loopback is never proxied even when the root names a proxy', async () => {
     assert.deepEqual(await get(origin), { status: 200, body: 'served' })
   })
   assert.deepEqual(connectRequests, [])
+})
+
+test('debug logging names the route each origin was given', async () => {
+  const lines = []
+  const log = { info: (message) => { lines.push(message) }, warn: () => {}, error: () => {} }
+  const transport = buildTransport(
+    normalizeConfig({ debug: true, rules: [{ host: 'localhost', insecure: true }] }),
+    captureBaseline(),
+    log,
+  )
+  try {
+    const response = await fetch(origin, { dispatcher: transport.dispatcher })
+    assert.equal(response.status, 200)
+    await response.text()
+  } finally {
+    await transport.release()
+  }
+  assert.ok(
+    lines.some(line => line === `route ${origin} => direct, verification off`),
+    lines.join(' | '),
+  )
+})
+
+test('a headers timeout from the document is the one the request gets', async () => {
+  // A server that accepts the connection and then says nothing: without the
+  // configured limit this request would wait out undici's 300 s default.
+  const sockets = []
+  const silent = createHttpServer(() => {})
+  silent.on('connection', (socket) => { sockets.push(socket) })
+  await new Promise(resolve => silent.listen(0, '127.0.0.1', resolve))
+  const port = silent.address().port
+  const transport = buildTransport(normalizeConfig({ timeouts: { headers: 300 } }), captureBaseline())
+  try {
+    const failure = await fetch(`http://127.0.0.1:${String(port)}/`, { dispatcher: transport.dispatcher })
+      .then(() => undefined)
+      .catch(error => error.cause?.code ?? error.message)
+    assert.equal(failure, 'UND_ERR_HEADERS_TIMEOUT')
+  } finally {
+    await transport.release()
+    for (const socket of sockets) socket.destroy()
+    await new Promise(resolve => silent.close(resolve))
+  }
 })

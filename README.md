@@ -143,6 +143,8 @@ config from the profile patch layer is used instead.
 | `caFiles` | PEM files added to this process's default trust store, on top of everything it already trusts. |
 | `insecure` | Skip certificate verification for every host. Prefer a rule. |
 | `rules` | Per-host overrides, first match wins. Each entry takes `host` (one entry or a list), and any of `proxy`, `insecure`, `caFiles`. |
+| `debug` | Log one line per origin the moment it is first connected to, naming the route it was given. |
+| `timeouts` | `{ connect, headers, body }` in milliseconds. Each one left out keeps undici's default (300 s for headers and body). |
 | `settingsFile` | Plugin-config-only: point the plugin at a different settings file. |
 
 A host entry matches the host and every subdomain under it, so `example.com`
@@ -218,6 +220,40 @@ This covers model traffic because DSH's LLM adapters call the global `fetch`
 with no dispatcher of their own (`dsh-llm-deepseek`, `dsh-llm-pi-ai`), and
 because the whole Harness — sessions, tools, HTTP MCP — runs in one Host
 process, so one install reaches all of it.
+
+### Finding out what one request actually did
+
+`"debug": true` — the **Log the route each host is given** switch on the
+settings page — writes one line per origin the first time it is connected to:
+
+```
+dsh-net-policy: route https://api.deepseek.com => proxy http://127.0.0.1:7890/
+dsh-net-policy: route https://api.deepseek.com => direct, verification off
+```
+
+That answers the question a timing-out request raises, which no amount of
+staring at the configuration can: whether the policy saw that origin at all,
+and what it decided. No line for the host that is failing means the request
+never reached this dispatcher. A `direct` line where you expected a proxy means
+a `noProxy` entry or a rule matched.
+
+The routing decision is made once per origin and cached, so the lines appear on
+first contact, not on every request.
+
+### Making a stuck request fail instead of hang
+
+A request that hangs tells you less than one that fails. `timeouts` bounds the
+wait:
+
+```json
+{ "proxy": "http://127.0.0.1:7890", "debug": true, "timeouts": { "connect": 5000, "headers": 20000 } }
+```
+
+`connect` bounds reaching the proxy or the origin, `headers` bounds the wait
+for the first response byte, `body` bounds the gap between body chunks. A
+streaming model reply arrives as many chunks, so keep `body` generous or unset;
+`headers` is the one that catches a proxy that accepts the connection and then
+does nothing with it.
 
 ### Proving it is in effect
 

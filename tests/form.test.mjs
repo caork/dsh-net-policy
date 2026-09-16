@@ -93,3 +93,23 @@ test('a leading ~ expands on either platform separator', () => {
   assert.equal(expandHome('C:\\certs\\root.pem'), 'C:\\certs\\root.pem')
   assert.equal(expandHome('~user/certs/root.pem'), '~user/certs/root.pem')
 })
+
+test('a save keeps the fields the page does not edit', () => {
+  const document = {
+    proxy: 'http://127.0.0.1:7890',
+    timeouts: { headers: 120000 },
+    settingsFile: 'ignored-by-the-page',
+    debug: true,
+    rules: [{ host: 'llm.internal', proxy: null, weight: 7 }],
+  }
+  const stored = documentFromForm(formFromDocument(document))
+  assert.deepEqual(stored.timeouts, { headers: 120000 })
+  assert.equal(stored.settingsFile, 'ignored-by-the-page')
+  assert.equal(stored.debug, true)
+  assert.deepEqual(stored.rules, [{ host: 'llm.internal', proxy: null, weight: 7 }])
+})
+
+test('clearing a switch in the form clears it in the document', () => {
+  const form = formFromDocument({ insecure: true, debug: true, proxy: 'http://127.0.0.1:7890' })
+  assert.deepEqual(documentFromForm({ ...form, insecure: false, debug: false }), { proxy: 'http://127.0.0.1:7890' })
+})

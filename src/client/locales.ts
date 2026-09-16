@@ -19,6 +19,8 @@ export type NetPolicyKey =
   | 'caHint'
   | 'insecureLabel'
   | 'insecureHint'
+  | 'debugLabel'
+  | 'debugHint'
   | 'rulesTitle'
   | 'rulesHint'
   | 'ruleHostPlaceholder'
@@ -52,6 +54,8 @@ export const zh: Record<NetPolicyKey, string> = {
   caHint: '每行一个 PEM 文件路径，追加到系统信任之上，不会替换原有信任。',
   insecureLabel: '对所有域名跳过证书校验',
   insecureHint: '危险：链路上的任何人都能读取和篡改流量。优先用下面的按域名规则。',
+  debugLabel: '把每个域名的路由决定写进日志',
+  debugHint: '每个域名第一次建立连接时记一行：它走了代理还是直连、是否跳过校验。请求超时时用它确认策略到底有没有管到这条流量。',
   rulesTitle: '按域名的规则',
   rulesHint: '自上而下取第一条匹配的规则，未填的项沿用上面的默认值。',
   ruleHostPlaceholder: 'llm.example.com',
@@ -86,6 +90,8 @@ export const en: Record<NetPolicyKey, string> = {
   caHint: 'One PEM path per line, added on top of what this machine already trusts.',
   insecureLabel: 'Skip certificate verification for every host',
   insecureHint: 'Dangerous: anything on the path can read and change the traffic. Prefer a per-host rule below.',
+  debugLabel: 'Log the route each host is given',
+  debugHint: 'One line the first time a host is connected to: proxy or direct, and whether verification was skipped. Use it when a request times out, to see whether the policy reached that traffic at all.',
   rulesTitle: 'Per-host rules',
   rulesHint: 'The first matching rule wins; anything it leaves unset falls back to the defaults above.',
   ruleHostPlaceholder: 'llm.example.com',

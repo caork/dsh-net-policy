@@ -204,6 +204,17 @@ export function NetPolicySection({ t }: { t: (key: string) => string }): React.R
         <p style={{ ...hint, color: form.insecure ? 'var(--dsw-alias-label-error)' : 'var(--dsw-alias-label-tertiary)' }}>
           {t('insecureHint')}
         </p>
+
+        <div style={{ height: 16 }} />
+        <label style={checkboxRow}>
+          <input
+            type="checkbox"
+            checked={form.debug}
+            onChange={(event) => { patch({ debug: event.target.checked }) }}
+          />
+          <span>{t('debugLabel')}</span>
+        </label>
+        <p style={hint}>{t('debugHint')}</p>
       </div>
 
       <div style={card}>
