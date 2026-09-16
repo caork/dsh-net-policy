@@ -24,6 +24,11 @@ dsh plugin --profile desktop add /path/to/dsh-net-policy-<version>.tgz
 Restart the app once afterwards. Settings then has a **Network** section, and
 the Host log carries one `dsh-net-policy: applied ...` line.
 
+The package has **no runtime dependencies** — undici is bundled into it — so
+the install needs nothing from the npm registry. That is deliberate: this
+plugin exists to fix a machine's outbound network, and it must be installable
+before that network works.
+
 ### Installing with pnpm directly does not work
 
 `dsh plugin add` forwards the install to pnpm **and** adds the package to
@@ -64,6 +69,30 @@ directory:
 
 **The standalone `dsh` CLI** needs no special path — just name the profile you
 boot, and run it against the same `DSH_HOME` the app uses.
+
+### When `dsh plugin add` hangs
+
+`dsh plugin` forwards to pnpm with the terminal attached, so a pnpm prompt
+stops everything and can look like a hang — most often the one that asks to
+purge and reinstall `node_modules`, which pnpm raises when the directory was
+built by a different pnpm than the one now running. Answer it in advance:
+
+```
+dsh plugin --profile desktop add C:\path\to\dsh-net-policy-<version>.tgz --config.confirmModulesPurge=false
+```
+
+Setting `CI=1` for the command has the same effect on every pnpm prompt.
+
+A hang with no prompt at all is the registry: pnpm is waiting on a network this
+plugin has not fixed yet. Since v0.3.0 the package carries no dependencies, so
+nothing needs downloading; if pnpm still reaches out, add `--offline` and it
+will say so instead of waiting.
+
+A warning about `NODE_TLS_REJECT_UNAUTHORIZED` being `0` means that variable is
+set in your environment. It disables certificate verification for **every** TLS
+connection this process makes, which is both dangerous and unnecessary once
+this plugin is installed — unset it and use `caFiles`, or an `insecure` rule
+scoped to the one host you cannot fix.
 
 ### When the Network section does not appear
 

@@ -2,3 +2,5 @@ node_modules/
 *.tgz
 # Built by tsdown from src/client; the hand-written host half lives in lib/ too.
 lib/client.js
+# Bundled from undici by `npm run build:vendor`; the licence beside it is kept.
+lib/vendor/undici.js

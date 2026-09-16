@@ -1,6 +1,6 @@
 {
   "name": "dsh-net-policy",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "DSH plugin: per-host TLS trust, certificate-verification and HTTP proxy policy for outbound model traffic",
   "type": "module",
   "license": "MIT",
@@ -48,22 +48,22 @@
     "proxy",
     "tls"
   ],
-  "dependencies": {
-    "undici": "^7.16.0"
-  },
   "engines": {
     "node": ">=22.19.0"
   },
   "scripts": {
     "build:client": "tsdown",
     "test": "node --test tests/policy.test.mjs tests/form.test.mjs tests/transport.test.mjs",
-    "prepack": "npm run build:client"
+    "prepack": "npm run build",
+    "build:vendor": "tsdown --config tsdown.vendor.config.ts",
+    "build": "npm run build:vendor && npm run build:client"
   },
   "devDependencies": {
     "@types/react": "~18.3.1",
     "react": "^18.2.0",
     "tsdown": "^0.14.0",
-    "typescript": "^5.9.3"
+    "typescript": "^5.9.3",
+    "undici": "^7.16.0"
   },
   "peerDependencies": {
     "@deepseek-ai/cordis": "^4.0.1"
